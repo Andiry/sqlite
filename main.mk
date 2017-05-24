@@ -67,7 +67,7 @@ LIBOBJ+= vdbe.o parse.o \
          memjournal.o \
          mutex.o mutex_noop.o mutex_unix.o mutex_w32.o \
          notify.o opcodes.o os.o os_unix.o os_win.o \
-         pager.o pcache.o pcache1.o pragma.o prepare.o printf.o \
+         pager.o pcache.o pcache1.o pmem.o pragma.o prepare.o printf.o \
          random.o resolve.o rowset.o rtree.o select.o sqlite3rbu.o status.o \
          table.o threads.o tokenize.o treeview.o trigger.o \
          update.o userauth.o util.o vacuum.o \
@@ -136,6 +136,8 @@ SRC = \
   $(TOP)/src/pcache.c \
   $(TOP)/src/pcache.h \
   $(TOP)/src/pcache1.c \
+  $(TOP)/src/pmem.c \
+  $(TOP)/src/pmem.h \
   $(TOP)/src/pragma.c \
   $(TOP)/src/pragma.h \
   $(TOP)/src/prepare.c \
@@ -366,6 +368,7 @@ TESTSRC2 = \
   $(TOP)/src/os_unix.c \
   $(TOP)/src/os_win.c \
   $(TOP)/src/pager.c \
+  $(TOP)/src/pmem.c \
   $(TOP)/src/pragma.c \
   $(TOP)/src/prepare.c \
   $(TOP)/src/printf.c \

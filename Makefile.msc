@@ -1103,7 +1103,7 @@ LIBOBJS0 = vdbe.lo parse.lo alter.lo analyze.lo attach.lo auth.lo \
          memjournal.lo \
          mutex.lo mutex_noop.lo mutex_unix.lo mutex_w32.lo \
          notify.lo opcodes.lo os.lo os_unix.lo os_win.lo \
-         pager.lo pcache.lo pcache1.lo pragma.lo prepare.lo printf.lo \
+         pager.lo pcache.lo pcache1.lo pmem.lo pragma.lo prepare.lo printf.lo \
          random.lo resolve.lo rowset.lo rtree.lo \
          sqlite3session.lo select.lo sqlite3rbu.lo status.lo \
          table.lo threads.lo tokenize.lo treeview.lo trigger.lo \
@@ -1188,6 +1188,7 @@ SRC01 = \
   $(TOP)\src\pager.c \
   $(TOP)\src\pcache.c \
   $(TOP)\src\pcache1.c \
+  $(TOP)\src\pmem.c \
   $(TOP)\src\pragma.c \
   $(TOP)\src\prepare.c \
   $(TOP)\src\printf.c \
@@ -1818,6 +1819,9 @@ pcache.lo:	$(TOP)\src\pcache.c $(HDR) $(TOP)\src\pcache.h
 
 pcache1.lo:	$(TOP)\src\pcache1.c $(HDR) $(TOP)\src\pcache.h
 	$(LTCOMPILE) $(CORE_COMPILE_OPTS) -c $(TOP)\src\pcache1.c
+
+pmem.lo:	$(TOP)\src\pmem.c $(HDR) $(TOP)\src\pmem.h
+	$(LTCOMPILE) $(CORE_COMPILE_OPTS) -c $(TOP)\src\pmem.c
 
 os.lo:	$(TOP)\src\os.c $(HDR)
 	$(LTCOMPILE) $(CORE_COMPILE_OPTS) -c $(TOP)\src\os.c

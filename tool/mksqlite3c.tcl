@@ -112,6 +112,7 @@ foreach hdr {
    pager.h
    parse.h
    pcache.h
+   pmem.h
    pragma.h
    rtree.h
    sqlite3session.h
@@ -316,6 +317,7 @@ foreach file {
    bitvec.c
    pcache.c
    pcache1.c
+   pmem.c
    rowset.c
    pager.c
    wal.c
