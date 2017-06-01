@@ -81,6 +81,7 @@ typedef struct PgHdr DbPage;
 #define PAGER_JOURNALMODE_TRUNCATE    3   /* Commit by truncating journal */
 #define PAGER_JOURNALMODE_MEMORY      4   /* In-memory journal file */
 #define PAGER_JOURNALMODE_WAL         5   /* Use write-ahead logging */
+#define PAGER_JOURNALMODE_PMEM        6   /* In-pmem journal file */
 
 /*
 ** Flags that make up the mask passed to sqlite3PagerGet().

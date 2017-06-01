@@ -6404,6 +6404,7 @@ case OP_JournalMode: {    /* out2 */
        || eNew==PAGER_JOURNALMODE_PERSIST 
        || eNew==PAGER_JOURNALMODE_OFF
        || eNew==PAGER_JOURNALMODE_MEMORY
+       || eNew==PAGER_JOURNALMODE_PMEM
        || eNew==PAGER_JOURNALMODE_WAL
        || eNew==PAGER_JOURNALMODE_QUERY
   );

@@ -262,6 +262,7 @@ const char *sqlite3JournalModename(int eMode){
 #ifndef SQLITE_OMIT_WAL
      , "wal"
 #endif
+     , "pmem"
   };
   assert( PAGER_JOURNALMODE_DELETE==0 );
   assert( PAGER_JOURNALMODE_PERSIST==1 );
@@ -269,6 +270,7 @@ const char *sqlite3JournalModename(int eMode){
   assert( PAGER_JOURNALMODE_TRUNCATE==3 );
   assert( PAGER_JOURNALMODE_MEMORY==4 );
   assert( PAGER_JOURNALMODE_WAL==5 );
+  assert( PAGER_JOURNALMODE_PMEM==6 );
   assert( eMode>=0 && eMode<=ArraySize(azModeName) );
 
   if( eMode==ArraySize(azModeName) ) return 0;

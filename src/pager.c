@@ -1012,6 +1012,7 @@ static char *print_pager_state(Pager *p){
         p->eLock==UNKNOWN_LOCK    ? "UNKNOWN" : "?error?"
       , p->exclusiveMode ? "exclusive" : "normal"
       , p->journalMode==PAGER_JOURNALMODE_MEMORY   ? "memory" :
+        p->journalMode==PAGER_JOURNALMODE_PMEM     ? "pmem" :
         p->journalMode==PAGER_JOURNALMODE_OFF      ? "off" :
         p->journalMode==PAGER_JOURNALMODE_DELETE   ? "delete" :
         p->journalMode==PAGER_JOURNALMODE_PERSIST  ? "persist" :
@@ -7174,7 +7175,8 @@ int sqlite3PagerSetJournalMode(Pager *pPager, int eMode){
             || eMode==PAGER_JOURNALMODE_TRUNCATE
             || eMode==PAGER_JOURNALMODE_PERSIST
             || eMode==PAGER_JOURNALMODE_OFF 
-            || eMode==PAGER_JOURNALMODE_WAL 
+            || eMode==PAGER_JOURNALMODE_WAL
+            || eMode==PAGER_JOURNALMODE_PMEM
             || eMode==PAGER_JOURNALMODE_MEMORY );
 
   /* This routine is only called from the OP_JournalMode opcode, and
