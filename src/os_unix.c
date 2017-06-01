@@ -3379,7 +3379,7 @@ int sqlite3_fullsync_count = 0;
 ** then simply compile with -Dfdatasync=fdatasync or -DHAVE_FDATASYNC
 */
 #if !defined(fdatasync) && !HAVE_FDATASYNC
-# define fdatasync fsync
+# define fdatasync fdatasync
 #endif
 
 /*
