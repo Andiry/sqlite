@@ -2037,6 +2037,7 @@ static int pager_end_transaction(Pager *pPager, int hasMaster, int bCommit){
       }
       pPager->journalOff = 0;
     }else if( pPager->journalMode==PAGER_JOURNALMODE_PERSIST
+      || pPager->journalMode==PAGER_JOURNALMODE_PMEM
       || (pPager->exclusiveMode && pPager->journalMode!=PAGER_JOURNALMODE_WAL)
     ){
       rc = zeroJournalHdr(pPager, hasMaster||pPager->tempFile);
@@ -5701,7 +5702,11 @@ static int pager_open_journal(Pager *pPager){
           flags |= SQLITE_OPEN_MAIN_JOURNAL;
           nSpill = jrnlBufferSize(pPager);
         }
-          
+
+        if ( pPager->journalMode==PAGER_JOURNALMODE_PMEM ){
+	  nSpill = -2;
+	}
+
         /* Verify that the database still has the same name as it did when
         ** it was originally opened. */
         rc = databaseIsUnmoved(pPager);
@@ -7148,6 +7153,7 @@ int sqlite3PagerLockingMode(Pager *pPager, int eMode){
 **    PAGER_JOURNALMODE_PERSIST
 **    PAGER_JOURNALMODE_OFF
 **    PAGER_JOURNALMODE_MEMORY
+**    PAGER_JOURNALMODE_PMEM
 **    PAGER_JOURNALMODE_WAL
 **
 ** The journalmode is set to the value specified if the change is allowed.

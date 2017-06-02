@@ -45,6 +45,7 @@ struct FileChunk {
 ** By default, allocate this many bytes of memory for each FileChunk object.
 */
 #define MEMJOURNAL_DFLT_FILECHUNKSIZE 1024
+#define PMEMJOURNAL_FILESIZE 1048576
 
 /*
 ** For chunk size nChunkSize, return the number of bytes that should
@@ -78,6 +79,10 @@ struct MemJournal {
   int flags;                      /* xOpen flags */
   sqlite3_vfs *pVfs;              /* The "real" underlying VFS */
   const char *zJournal;           /* Name of the journal file */
+
+  int pfd;			  /* Pmem journal file descriptor */
+  int fileSize;			  /* Pmem journal file size */
+  void *pmem;			  /* Pmem journal mmap address */
 };
 
 /*
@@ -332,6 +337,136 @@ static const struct sqlite3_io_methods MemJournalMethods = {
   0                 /* xUnfetch */
 };
 
+/*
+** PMEM journal methods.
+*/
+
+/*
+** Read data from the in-memory journal file.  This is the implementation
+** of the sqlite3_vfs.xRead method.
+*/
+static int pmemjrnlRead(
+  sqlite3_file *pJfd,    /* The journal file from which to read */
+  void *zBuf,            /* Put the results here */
+  int iAmt,              /* Number of bytes to read */
+  sqlite_int64 iOfst     /* Begin reading at this offset */
+){
+  MemJournal *p = (MemJournal *)pJfd;
+  u8 *zOut = zBuf;
+
+  assert( (iAmt + iOfst)<=p->endpoint.iOffset );
+
+  memcpy(zOut, (u8*)p->pmem + iOfst, iAmt);
+  p->readpoint.iOffset = iOfst + iAmt;
+
+  return SQLITE_OK;
+}
+
+
+/*
+** Write data to the file.
+*/
+static int pmemjrnlWrite(
+  sqlite3_file *pJfd,    /* The journal file into which to write */
+  const void *zBuf,      /* Take data to be written from here */
+  int iAmt,              /* Number of bytes to write */
+  sqlite_int64 iOfst     /* Begin writing at this offset into the file */
+){
+  MemJournal *p = (MemJournal *)pJfd;
+  int nWrite = iAmt;
+  u8 *zWrite = (u8 *)zBuf;
+
+  /* The contents of this write should be stored in pmem */
+
+  /* FIXME: Extend journal file */
+  assert( p->fileSize >= iOfst + iAmt);
+
+  pmem_memcpy_nodrain((u8*)p->pmem + iOfst, zWrite, iAmt);
+  p->endpoint.iOffset = iOfst + iAmt;
+
+  return SQLITE_OK;
+}
+
+
+/*
+** Truncate the file.
+**
+** If the journal file is already on disk, truncate it there. Or, if it
+** is still in main memory but is being truncated to zero bytes in size,
+** ignore
+*/
+static int pmemjrnlTruncate(sqlite3_file *pJfd, sqlite_int64 size){
+  MemJournal *p = (MemJournal *)pJfd;
+  if( ALWAYS(size==0) ){
+    /* Shall we truncate the pmem journal? */
+    p->nSize = 0;
+    p->endpoint.iOffset = 0;
+    p->readpoint.iOffset = 0;
+  }
+  return SQLITE_OK;
+}
+
+/*
+** Close the file.
+*/
+static int pmemjrnlClose(sqlite3_file *pJfd){
+  MemJournal *p = (MemJournal *)pJfd;
+
+  munmap(p->pmem, p->fileSize);
+  close(p->pfd);
+  p->pmem = NULL;
+  p->pfd = 0;
+  return SQLITE_OK;
+}
+
+/*
+** Sync the file.
+**
+** If the real file has been created, call its xSync method. Otherwise,
+** syncing an in-memory journal is a no-op.
+*/
+static int pmemjrnlSync(sqlite3_file *pJfd, int flags){
+  UNUSED_PARAMETER2(pJfd, flags);
+  pmem_drain();
+  return SQLITE_OK;
+}
+
+/*
+** Query the size of the file in bytes.
+*/
+static int pmemjrnlFileSize(sqlite3_file *pJfd, sqlite_int64 *pSize){
+  MemJournal *p = (MemJournal *)pJfd;
+//  *pSize = (sqlite_int64) p->endpoint.iOffset;
+  *pSize = (sqlite_int64) p->fileSize;
+
+  return SQLITE_OK;
+}
+
+/*
+** Table of methods for PMemJournal sqlite3_file object.
+*/
+static const struct sqlite3_io_methods PMemJournalMethods = {
+  1,                /* iVersion */
+  pmemjrnlClose,     /* xClose */
+  pmemjrnlRead,      /* xRead */
+  pmemjrnlWrite,     /* xWrite */
+  pmemjrnlTruncate,  /* xTruncate */
+  pmemjrnlSync,      /* xSync */
+  pmemjrnlFileSize,  /* xFileSize */
+  0,                /* xLock */
+  0,                /* xUnlock */
+  0,                /* xCheckReservedLock */
+  0,                /* xFileControl */
+  0,                /* xSectorSize */
+  0,                /* xDeviceCharacteristics */
+  0,                /* xShmMap */
+  0,                /* xShmLock */
+  0,                /* xShmBarrier */
+  0,                /* xShmUnmap */
+  0,                /* xFetch */
+  0                 /* xUnfetch */
+};
+
 /* 
 ** Open a journal file. 
 **
@@ -352,6 +487,7 @@ int sqlite3JournalOpen(
   int nSpill                 /* Bytes buffered before opening the file */
 ){
   MemJournal *p = (MemJournal*)pJfd;
+  int pfd;
 
   /* Zero the file-handle object. If nSpill was passed zero, initialize
   ** it using the sqlite3OsOpen() function of the underlying VFS. In this
@@ -369,7 +505,18 @@ int sqlite3JournalOpen(
     assert( MEMJOURNAL_DFLT_FILECHUNKSIZE==fileChunkSize(p->nChunkSize) );
   }
 
-  p->pMethod = (const sqlite3_io_methods*)&MemJournalMethods;
+  if (nSpill == -1) {
+    p->pMethod = (const sqlite3_io_methods*)&MemJournalMethods;
+  } else {
+    pfd = open(zName, O_CREAT | O_RDWR, 0640);
+    fallocate(pfd, 0, 0, PMEMJOURNAL_FILESIZE);
+    p->pfd = pfd;
+    p->pmem = mmap(NULL, PMEMJOURNAL_FILESIZE, PROT_WRITE | PROT_READ,
+		    MAP_SHARED, pfd, 0);
+    p->fileSize = PMEMJOURNAL_FILESIZE;
+    p->pMethod = (const sqlite3_io_methods*)&PMemJournalMethods;
+  }
+
   p->nSpill = nSpill;
   p->flags = flags;
   p->zJournal = zName;
