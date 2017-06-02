@@ -4677,6 +4677,7 @@ int sqlite3PagerOpen(
 
   /* Set the output variable to NULL in case an error occurs. */
   *ppPager = 0;
+  pmem_init();
 
 #ifndef SQLITE_OMIT_MEMORYDB
   if( flags & PAGER_MEMORY ){

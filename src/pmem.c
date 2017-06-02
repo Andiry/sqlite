@@ -237,6 +237,9 @@ cpuid(unsigned func, unsigned subfunc, unsigned cpuinfo[4])
 #define bit_CLWB	(1 << 24)
 #endif
 
+int clflushopt_support = 0;
+int clwb_support = 0;
+
 /*
  * is_cpu_feature_present -- (internal) checks if CPU feature is supported
  */
@@ -962,6 +965,7 @@ pmem_get_cpuinfo(void)
 
 		Func_flush = flush_clflushopt;
 		Func_predrain_fence = predrain_fence_sfence;
+		clflushopt_support = 1;
 	}
 
 	if (is_cpu_clwb_present()) {
@@ -969,6 +973,7 @@ pmem_get_cpuinfo(void)
 
 		Func_flush = flush_clwb;
 		Func_predrain_fence = predrain_fence_sfence;
+		clwb_support = 1;
 	}
 }
 

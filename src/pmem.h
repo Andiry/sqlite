@@ -33,6 +33,9 @@
 #ifndef NVML_CPU_H
 #define NVML_CPU_H 1
 
+extern int clflushopt_support;
+extern int clwb_support;
+
 void pmem_persist(const void *addr, size_t len);
 int pmem_msync(const void *addr, size_t len);
 void pmem_flush(const void *addr, size_t len);

@@ -381,7 +381,13 @@ static int pmemjrnlWrite(
   /* FIXME: Extend journal file */
   assert( p->fileSize >= iOfst + iAmt);
 
-  pmem_memcpy_nodrain((u8*)p->pmem + iOfst, zWrite, iAmt);
+  if (clwb_support) {
+    memcpy((u8*)p->pmem + iOfst, zWrite, iAmt);
+    pmem_flush((u8*)p->pmem + iOfst, iAmt);
+  } else {
+    pmem_memcpy_nodrain((u8*)p->pmem + iOfst, zWrite, iAmt);
+  }
+
   p->endpoint.iOffset = iOfst + iAmt;
 
   return SQLITE_OK;
