@@ -1830,7 +1830,7 @@ static void pager_unlock(Pager *pPager){
     if( 0==(iDc & SQLITE_IOCAP_UNDELETABLE_WHEN_OPEN)
      || 1!=(pPager->journalMode & 5)
     ){
-      sqlite3OsClose(pPager->jfd);
+//      sqlite3OsClose(pPager->jfd);
     }
 
     /* If the pager is in the ERROR state and the call to unlock the database
