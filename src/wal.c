@@ -1287,6 +1287,7 @@ int sqlite3WalOpen(
   int rc;                         /* Return Code */
   Wal *pRet;                      /* Object to allocate and return */
   int flags;                      /* Flags passed to OsOpen() */
+  int pWalFd;
 
   assert( zWalName && zWalName[0] );
   assert( pDbFd );
@@ -1330,6 +1331,11 @@ int sqlite3WalOpen(
   if( rc==SQLITE_OK && flags&SQLITE_OPEN_READONLY ){
     pRet->readOnly = WAL_RDONLY;
   }
+
+#ifdef SQLITE_FALLOCATE_WAL
+  pWalFd = ((unixFile *)pRet->pWalFd)->h;
+  fallocate(pWalFd, 0, 0, 5242880);
+#endif
 
   if( rc!=SQLITE_OK ){
     walIndexClose(pRet, 0);
@@ -1912,9 +1918,11 @@ static void walLimitSize(Wal *pWal, i64 nMax){
   int rx;
   sqlite3BeginBenignMalloc();
   rx = sqlite3OsFileSize(pWal->pWalFd, &sz);
+#ifndef SQLITE_FALLOCATE_WAL
   if( rx==SQLITE_OK && (sz > nMax ) ){
     rx = sqlite3OsTruncate(pWal->pWalFd, nMax);
   }
+#endif
   sqlite3EndBenignMalloc();
   if( rx ){
     sqlite3_log(rx, "cannot limit WAL size: %s", pWal->zWalName);
