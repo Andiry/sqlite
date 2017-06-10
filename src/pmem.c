@@ -797,6 +797,22 @@ pmem_memcpy_persist(void *pmemdest, const void *src, size_t len)
 }
 
 /*
+ * pmem_memcpy_flush -- memcpy to pmem and flush
+ */
+void *
+pmem_memcpy_flush(void *pmemdest, const void *src, size_t len)
+{
+	if (clwb_support) {
+		memcpy(pmemdest, src, len);
+		pmem_flush(pmemdest, len);
+	} else {
+		pmem_memcpy_nodrain(pmemdest, src, len);
+	}
+
+	return pmemdest;
+}
+
+/*
  * memset_nodrain_normal -- (internal) memset to pmem without hw drain, normal
  */
 static void *

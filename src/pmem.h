@@ -43,6 +43,7 @@ void pmem_drain(void);
 int pmem_has_hw_drain(void);
 void *pmem_memmove_persist(void *pmemdest, const void *src, size_t len);
 void *pmem_memcpy_persist(void *pmemdest, const void *src, size_t len);
+void *pmem_memcpy_flush(void *pmemdest, const void *src, size_t len);
 void *pmem_memset_persist(void *pmemdest, int c, size_t len);
 void *pmem_memmove_nodrain(void *pmemdest, const void *src, size_t len);
 void *pmem_memcpy_nodrain(void *pmemdest, const void *src, size_t len);
